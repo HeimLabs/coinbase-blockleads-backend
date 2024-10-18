@@ -3,18 +3,20 @@ import AppError from "../utils/appError";
 import { wallet } from "../services/coinbase.services";
 import { SubmitRequest } from "types/api.types";
 import { Coinbase } from "@coinbase/coinbase-sdk";
-import { isAddress } from "viem";
 import { UserModel } from "../models/User.model";
 import { Parser } from 'json2csv';
 
 export async function submit(req: SubmitRequest, res: Response, next: NextFunction) {
+    const session = await UserModel.startSession();
     try {
+        session.startTransaction();
+
         const { name, email, address } = req.body;
 
-        if (!name || !email || !address || !isAddress(address))
+        if (!name || !email || !address)
             throw new AppError(400, "error", "Invalid request");
 
-        await UserModel.create({ name, email, address });
+        await UserModel.create([{ name, email, address }], { session });
 
         const asset = Coinbase.assets.Usdc;
         const amount = Number(process.env.REWARD_AMOUNT);
@@ -29,10 +31,14 @@ export async function submit(req: SubmitRequest, res: Response, next: NextFuncti
             gasless: true
         })).wait();
 
-        return res.status(200).json({ transactionLink: transfer.getTransactionLink() });
+        await session.commitTransaction();
+        res.status(200).json({ transactionLink: transfer.getTransactionLink() });
     } catch (error) {
+        await session.abortTransaction();
         console.error("[controllers/form/submit] Failed to submit: ", error);
         next(error);
+    } finally {
+        await session.endSession();
     }
 }
 

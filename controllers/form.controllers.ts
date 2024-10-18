@@ -5,7 +5,7 @@ import { SubmitRequest } from "types/api.types";
 import { Coinbase } from "@coinbase/coinbase-sdk";
 import { isAddress } from "viem";
 import { UserModel } from "../models/User.model";
-import { Parser } from 'json2csv'; 
+import { Parser } from 'json2csv';
 
 export async function submit(req: SubmitRequest, res: Response, next: NextFunction) {
     try {
@@ -22,14 +22,14 @@ export async function submit(req: SubmitRequest, res: Response, next: NextFuncti
         if (balance.lessThan(amount))
             throw new AppError(400, "error", "Insufficient balance");
 
-        await wallet().createTransfer({
+        const transfer = await (await wallet().createTransfer({
             amount,
             assetId: asset,
             destination: address,
             gasless: true
-        });
+        })).wait();
 
-        return res.status(200).json("Success");
+        return res.status(200).json({ transactionLink: transfer.getTransactionLink() });
     } catch (error) {
         console.error("[controllers/form/submit] Failed to submit: ", error);
         next(error);

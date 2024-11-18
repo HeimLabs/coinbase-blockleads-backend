@@ -29,7 +29,7 @@ export async function submit(req: SubmitRequest, res: Response, next: NextFuncti
             assetId: asset,
             destination: address,
             gasless: true
-        })).wait();
+        })).wait({ timeoutSeconds: 120 });
 
         await session.commitTransaction();
         res.status(200).json({ transactionLink: transfer.getTransactionLink() });

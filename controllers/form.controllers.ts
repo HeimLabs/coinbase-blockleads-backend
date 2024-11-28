@@ -11,12 +11,12 @@ export async function submit(req: SubmitRequest, res: Response, next: NextFuncti
     try {
         session.startTransaction();
 
-        const { name, email, address } = req.body;
+        const { name, address } = req.body;
 
-        if (!name || !email || !address)
+        if (!name || !address)
             throw new AppError(400, "error", "Invalid request");
 
-        await UserModel.create([{ name, email, address }], { session });
+        await UserModel.create([{ name, address }], { session });
 
         const asset = Coinbase.assets.Usdc;
         const amount = Number(process.env.REWARD_AMOUNT);
@@ -46,7 +46,7 @@ export async function get(req: Request, res: Response, next: NextFunction) {
     try {
         const users = await UserModel.find();
 
-        const fields = ['_id', 'name', 'email', 'address'];
+        const fields = ['_id', 'name', 'address'];
         const json2csvParser = new Parser({ fields });
         const csv = json2csvParser.parse(users);
 

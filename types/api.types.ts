@@ -6,7 +6,6 @@ export type Status = "idle" | "loading" | "success" | "fail" | "error";
 
 export type SubmitBody = {
     name: string,
-    email: string,
     chainId: number,
     address: string
 };
